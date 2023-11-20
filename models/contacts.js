@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const Joi = require("joi");
 
 const contactSchema = new mongoose.Schema({
   name: {
@@ -15,6 +16,18 @@ const contactSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+});
+
+const addSchema = Joi.object({
+  name: Joi.string().min(3).required(),
+  email: Joi.string().required(),
+  phone: Joi.string()
+    .pattern(/^\(\d{3}\)\s\d{3}-\d{4}/)
+    .required(),
+});
+
+const addSchemaFavorite = Joi.object({
+  favorite: Joi.boolean().required(),
 });
 
 const Contact = mongoose.model("Contact", contactSchema);
@@ -62,6 +75,12 @@ const removeContact = async (req, res, next) => {
 };
 
 const addContact = async (req, res, next) => {
+  const { error } = addSchema.validate(req.body);
+
+  if (error) {
+    return res.status(400).json({ message: error.message });
+  }
+
   const contact = {
     name: req.body.name,
     email: req.body.email,
@@ -80,6 +99,11 @@ const addContact = async (req, res, next) => {
 
 const updateContact = async (req, res, next) => {
   const { contactId } = req.params;
+  const { error } = addSchema.validate(req.body);
+
+  if (error) {
+    return res.status(400).json({ message: error.message });
+  }
 
   const contact = {
     name: req.body.name,
@@ -108,7 +132,11 @@ async function updateStatusContact(req, res, next) {
   const { favorite } = req.body;
 
   try {
-    console.log("Updating contact with ID:", contactId);
+    const { error } = addSchemaFavorite.validate(req.body);
+
+    if (error) {
+      return res.status(400).json({ message: error.message });
+    }
 
     if (favorite === undefined) {
       return res.status(400).json({ message: "missing field favorite" });

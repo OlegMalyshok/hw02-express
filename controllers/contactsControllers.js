@@ -38,7 +38,7 @@ const Contact = mongoose.model("Contact", contactSchema);
 
 const listContacts = async (req, res, next) => {
   try {
-    const contacts = await Contact.find().exec();
+    const contacts = await Contact.find({ userId: req.user.id }).exec();
 
     console.log(contacts);
 
@@ -90,6 +90,7 @@ const addContact = async (req, res, next) => {
     email: req.body.email,
     phone: req.body.phone,
     favorite: req.body.favorite,
+    userId: req.user.id,
   };
 
   try {

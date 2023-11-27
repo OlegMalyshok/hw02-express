@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const { User } = require("../models/user");
+const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const Joi = require("joi");
 
@@ -57,14 +57,12 @@ async function login(req, res, next) {
     const user = await User.findOne({ email }).exec();
 
     if (user === null) {
-      console.log("EMAIL");
       return res.status(401).json({ message: "Email or password is wrong" });
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (passwordMatch === false) {
-      console.log("PASSWORD");
       return res.status(401).json({ message: "Email or password is wrong" });
     }
 
@@ -73,6 +71,8 @@ async function login(req, res, next) {
     });
 
     user.token = token;
+
+    await user.save();
 
     res.status(200).json({
       token,

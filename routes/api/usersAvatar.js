@@ -7,6 +7,6 @@ const upload = require("../../middleware/upload");
 const router = express.Router();
 
 router.get("/avatar", UserController.getAvatar);
-router.patch("/avatar", upload.single("avatar"), UserController.uploadAvatar);
+router.patch("/avatar", upload.single("avatar"), UserController.updateAvatar);
 
 module.exports = router;

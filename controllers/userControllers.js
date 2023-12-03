@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const Joi = require("joi");
+const gravatar = require("gravatar");
 
 const schemaUser = Joi.object({
   email: Joi.string().email().required(),
@@ -33,7 +34,13 @@ async function register(req, res, next) {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const newUser = await User.create({ email, password: passwordHash });
+    const avatarURL = gravatar.url(email);
+
+    const newUser = await User.create({
+      email,
+      password: passwordHash,
+      avatarURL,
+    });
 
     res.status(201).json({
       user: { email: newUser.email, subscription: newUser.subscription },

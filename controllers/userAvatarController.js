@@ -24,6 +24,10 @@ async function getAvatar(req, res, next) {
 
 async function updateAvatar(req, res, next) {
   try {
+    if (!req.file) {
+      return res.status(400).json({ message: "Please attach a file" });
+    }
+
     const filePath = path.join(__dirname, "..", "tmp", req.file.filename);
 
     const image = await Jimp.read(filePath);

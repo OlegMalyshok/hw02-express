@@ -1,25 +1,44 @@
-const express = require('express')
+const express = require("express");
+const ContactController = require("../../controllers/contactsControllers");
 
-const router = express.Router()
+const router = express.Router();
+const jsonParser = express.json();
 
-router.get('/', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+const authenticate = require("../../middleware/auth");
+const isValidId = require("../../middleware/isValidId");
 
-router.get('/:contactId', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+router.get("/", authenticate, ContactController.listContacts);
 
-router.post('/', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+router.get(
+  "/:contactId",
+  authenticate,
+  isValidId,
+  ContactController.getContactById
+);
 
-router.delete('/:contactId', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+router.post("/", jsonParser, authenticate, ContactController.addContact);
 
-router.put('/:contactId', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+router.delete(
+  "/:contactId",
+  authenticate,
+  isValidId,
+  ContactController.removeContact
+);
 
-module.exports = router
+router.put(
+  "/:contactId",
+  authenticate,
+  isValidId,
+  jsonParser,
+  ContactController.updateContact
+);
+
+router.patch(
+  "/:contactId/favorite",
+  authenticate,
+  isValidId,
+  jsonParser,
+  ContactController.updateStatusContact
+);
+
+module.exports = router;

@@ -17,7 +17,9 @@ const authenticate = async (req, res, next) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    console.log("User found:", user);
+    if (user.verify !== true) {
+      return res.status(401).send({ message: "Your account is not verified" });
+    }
 
     req.user = user;
     next();

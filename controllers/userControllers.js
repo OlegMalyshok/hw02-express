@@ -1,8 +1,11 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const Joi = require("joi");
 const gravatar = require("gravatar");
+const crypto = require("node:crypto");
+
+const User = require("../models/user");
+const sendEmail = require("../helpers/sendEmail");
 
 const schemaUser = Joi.object({
   email: Joi.string().email().required(),
@@ -36,8 +39,18 @@ async function register(req, res, next) {
 
     const avatarURL = gravatar.url(email);
 
+    const verifyToken = crypto.randomUUID();
+
+    await sendEmail({
+      to: email,
+      subject: "Welcome to ContactsList",
+      html: `To confirm your registration please click on the <a href="http://localhost:3005/users/verify/${verifyToken}">link</a>`,
+      text: `To confirm your registration please open the link http://localhost:3005/users/verify/${verifyToken}`,
+    });
+
     const newUser = await User.create({
       email,
+      verifyToken,
       password: passwordHash,
       avatarURL,
     });
@@ -71,6 +84,10 @@ async function login(req, res, next) {
 
     if (passwordMatch === false) {
       return res.status(401).json({ message: "Email or password is wrong" });
+    }
+
+    if (user.verify !== true) {
+      return res.status(401).send({ message: "Your account is not verified" });
     }
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
@@ -115,4 +132,28 @@ async function current(req, res, next) {
   }
 }
 
-module.exports = { register, login, logout, current };
+async function verify(req, res, next) {
+  const { token } = req.params;
+  console.log(token);
+
+  try {
+    const user = await User.findOne({
+      verifyToken: token,
+    }).exec();
+
+    if (user === null) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    await User.findByIdAndUpdate(user._id, {
+      verify: true,
+      verifyToken: null,
+    });
+
+    res.send({ message: "Email confirm successfuly" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { register, login, logout, current, verify };

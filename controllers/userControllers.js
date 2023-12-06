@@ -6,6 +6,7 @@ const crypto = require("node:crypto");
 
 const User = require("../models/user");
 const sendEmail = require("../helpers/sendEmail");
+const serverAddress = process.env.SERVER_ADDRESS;
 
 const schemaUser = Joi.object({
   email: Joi.string().email().required(),
@@ -44,8 +45,8 @@ async function register(req, res, next) {
     await sendEmail({
       to: email,
       subject: "Welcome to ContactsList",
-      html: `To confirm your registration please click on the <a href="http://localhost:3005/users/verify/${verifyToken}">link</a>`,
-      text: `To confirm your registration please open the link http://localhost:3005/users/verify/${verifyToken}`,
+      html: `To confirm your registration please click on the <a href="${serverAddress}/users/verify/${verifyToken}">link</a>`,
+      text: `To confirm your registration please open the link ${serverAddress}/users/verify/${verifyToken}`,
     });
 
     const newUser = await User.create({
@@ -156,4 +157,45 @@ async function verify(req, res, next) {
   }
 }
 
-module.exports = { register, login, logout, current, verify };
+async function resendVerifyEmail(req, res, next) {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "missing required field email" });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.verify === true) {
+      return res
+        .status(400)
+        .json({ message: "Verification has already been passed" });
+    }
+
+    const verifyToken = user.verifyToken;
+    await sendEmail({
+      to: email,
+      subject: "Verification Email Resent",
+      html: `To confirm your registration please click on the <a href="${serverAddress}/users/verify/${verifyToken}">link</a>`,
+      text: `To confirm your registration please open the link ${serverAddress}/users/verify/${verifyToken}`,
+    });
+
+    res.status(200).json({ message: "Verification email resent successfully" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = {
+  register,
+  login,
+  logout,
+  current,
+  verify,
+  resendVerifyEmail,
+};
